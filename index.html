@@ -1,4 +1,4 @@
-<html ng-app="deploymentApp">
+<html>
 <head>
 <meta charset="utf-8">
 <title>Ops Metrics Data</title>
@@ -8,139 +8,183 @@
 <script type="text/javascript" src="./js/angular.min.js"></script>
 <script type="text/javascript" src="./js/jquery-1.12.0.min.js"></script>
 <script type="text/javascript" src="./js/bootstrap.min.js"></script>
+<script type="text/javascript" src="./js/underscore-min.js"></script>
 
 <script type="text/javascript" src="./js/jquery.dataTables.min.js"></script>
 <script type="text/javascript" src="./js/dataTables.bootstrap.min.js"></script>
 
-<script>
-	var deploymentApp = angular.module('deploymentApp', [])
-	.directive(
-			'loading',
-			function() {
-				return {
-					restrict : 'E',
-					replace : true,
-					template : '<div class="loading"><img src="http://www.nasa.gov/multimedia/videogallery/ajax-loader.gif" width="20" height="20" align="center"/>Please wait while the data is being pulled</div>',
-					link : function(scope, element, attr) {
-						scope.$watch('loading', function(val) {
-							if (val)
-								$(element).show();
-							else
-								$(element).hide();
-						});
-					}
-				}
-			})
-	.directive(
-			'collapseToggler',
-			function() {
-				return {
-					restrict : 'A',
-					link : function(scope, element, attr) {
-						element.on('click', function() {
-							$(this).siblings('.collapse').toggleClass('in');
-							if ($(this).find('.glyphicon').hasClass("glyphicon-chevron-down")) {
-								$(this).find('.glyphicon').removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
-							} else {
-								$(this).find('.glyphicon').removeClass("glyphicon-chevron-up").addClass("glyphicon-chevron-down");
-							}
-						});
-					}
-				};
-			})
-	.controller(
-			'DeploymentCtrl',
-			function($scope, $http) {
-				$scope.loading = true;
-				$http.get('http://localhost:8080/mbeans/').success(function(data) {
-					$scope.vmMetrics = data.vmMetrics;
-					$scope.customJobMetrics = data.customJobMetrics;
-					$scope.loading = false;
-				}).error(function(response) {
-					$('.alert-danger').html("Error while invoking the server").show();
-					$scope.loading = false;
-				});
-			});
-</script>
-
-
+<script type="text/javascript" src="./js/metrics.js"></script>
 </head>
-<body ng-controller="DeploymentCtrl">
-	<loading></loading>
-	<div ng-if="vmMetrics">
-		<div collapse-toggler class="toggler">
-			<a href="#"><i class="glyphicon glyphicon-chevron-down"></i>
-				All VM Metrics</a>
+<body>
+	<div id="metrics" ng-app="metricsApp" ng-controller="metricsCtrl">
+		<loading></loading>
+		<div ng-if="vmMetrics">
+			<div collapse-toggler class="toggler">
+				<a href="#"><i class="glyphicon glyphicon-chevron-down"></i> All
+					VM Metrics</a>
+			</div>
+			<div class="collapse">
+				<table id="vmMetricsTable"
+					class="table table-striped table-bordered" cellspacing="0"
+					width="100%">
+					<tr>
+						<td>Deployment Name</td>
+						<td>Job Name</td>
+						<td>Job IP</td>
+						<td>Job Index</td>
+						<td>system.healthy</td>
+						<td>system.load.1m</td>
+						<td>system.swap.percent</td>
+						<td>system.swap.kb</td>
+						<td>system.cpu.user</td>
+						<td>system.disk.ephemeral.inode.percent</td>
+						<td>system.disk.ephemeral.percent</td>
+						<td>system.disk.system.percent</td>
+						<td>system.cpu.sys</td>
+						<td>system.disk.persistent.percent</td>
+						<td>system.mem.kb</td>
+						<td>system.cpu.wait</td>
+						<td>system.mem.percent</td>
+						<td>system.disk.system.inode.percent</td>
+						<td>system.disk.persistent.inode.percent</td>
+					</tr>
+					<tr
+						ng-repeat="vmMetric in vmMetrics | orderBy:'jobDetail.deployment'">
+						<td>{{vmMetric.jobDetail.deployment}}</td>
+						<td>{{vmMetric.jobDetail.job}}</td>
+						<td>{{vmMetric.jobDetail.ip}}</td>
+						<td>{{vmMetric.jobDetail.index}}</td>
+						<td>{{vmMetric.fixedAttribute.system_healthy}}</td>
+						<td>{{vmMetric.fixedAttribute.system_load_1m}}</td>
+						<td>{{vmMetric.fixedAttribute.system_swap_percent}}</td>
+						<td>{{vmMetric.fixedAttribute.system_swap_kb}}</td>
+						<td>{{vmMetric.fixedAttribute.system_cpu_user}}</td>
+						<td>{{vmMetric.fixedAttribute.system_disk_ephemeral_inode_percent}}</td>
+						<td>{{vmMetric.fixedAttribute.system_disk_ephemeral_percent}}</td>
+						<td>{{vmMetric.fixedAttribute.system_disk_system_percent}}</td>
+						<td>{{vmMetric.fixedAttribute.system_cpu_sys}}</td>
+						<td>{{vmMetric.fixedAttribute.system_disk_persistent_percent}}</td>
+						<td>{{vmMetric.fixedAttribute.system_mem_kb}}</td>
+						<td>{{vmMetric.fixedAttribute.system_cpu_wait}}</td>
+						<td>{{vmMetric.fixedAttribute.system_mem_percent}}</td>
+						<td>{{vmMetric.fixedAttribute.system_disk_system_inode_percent}}</td>
+						<td>{{vmMetric.fixedAttribute.system_disk_persistent_inode_percent}}</td>
+					</tr>
+				</table>
+			</div>
 		</div>
-		<div class="collapse">
-			<table id="vmMetricsTable" class="table table-striped table-bordered" cellspacing="0" width="100%">
-				<tr>
-					<td>Deployment Name</td>
-					<td>Job Name</td>
-					<td>Job IP</td>
-					<td>Job Index</td>
-					<td>system.healthy</td>
-					<td>system.load.1m</td>
-					<td>system.swap.percent</td>
-					<td>system.swap.kb</td>
-					<td>system.cpu.user</td>
-					<td>system.disk.ephemeral.inode.percent</td>
-					<td>system.disk.ephemeral.percent</td>
-					<td>system.disk.system.percent</td>
-					<td>system.cpu.sys</td>
-					<td>system.disk.persistent.percent</td>
-					<td>system.mem.kb</td>
-					<td>system.cpu.wait</td>
-					<td>system.mem.percent</td>
-					<td>system.disk.system.inode.percent</td>
-					<td>system.disk.persistent.inode.percent</td>
-				</tr>
-				<tr ng-repeat="vmMetric in vmMetrics | orderBy:'jobDetail.deployment'">
-					<td>{{vmMetric.jobDetail.deployment}}</td>
-					<td>{{vmMetric.jobDetail.job}}</td>
-					<td>{{vmMetric.jobDetail.ip}}</td>
-					<td>{{vmMetric.jobDetail.index}}</td>
-					<td>{{vmMetric.fixedAttribute.system_healthy}}</td>
-					<td>{{vmMetric.fixedAttribute.system_load_1m}}</td>
-					<td>{{vmMetric.fixedAttribute.system_swap_percent}}</td>
-					<td>{{vmMetric.fixedAttribute.system_swap_kb}}</td>
-					<td>{{vmMetric.fixedAttribute.system_cpu_user}}</td>
-					<td>{{vmMetric.fixedAttribute.system_disk_ephemeral_inode_percent}}</td>
-					<td>{{vmMetric.fixedAttribute.system_disk_ephemeral_percent}}</td>
-					<td>{{vmMetric.fixedAttribute.system_disk_system_percent}}</td>
-					<td>{{vmMetric.fixedAttribute.system_cpu_sys}}</td>
-					<td>{{vmMetric.fixedAttribute.system_disk_persistent_percent}}</td>
-					<td>{{vmMetric.fixedAttribute.system_mem_kb}}</td>
-					<td>{{vmMetric.fixedAttribute.system_cpu_wait}}</td>
-					<td>{{vmMetric.fixedAttribute.system_mem_percent}}</td>
-					<td>{{vmMetric.fixedAttribute.system_disk_system_inode_percent}}</td>
-					<td>{{vmMetric.fixedAttribute.system_disk_persistent_inode_percent}}</td>
-				</tr>
-			</table>
-		</div>
-	</div>
 
-	<div ng-repeat="customJobMetric in customJobMetrics | orderBy:'jobDetail.deployment'">
-		<div collapse-toggler class="toggler">
-			<a href="#"><i class="glyphicon glyphicon-chevron-down"></i>
-				{{customJobMetric.jobDetail.deployment}} | 
-				{{customJobMetric.jobDetail.job}} |  
-				{{customJobMetric.jobDetail.ip}} | 
-				{{customJobMetric.jobDetail.index}}</a>
+		<div
+			ng-repeat="customJobMetric in customJobMetrics | orderBy:'jobDetail.deployment'">
+			<div collapse-toggler class="toggler">
+				<a href="#"><i class="glyphicon glyphicon-chevron-down"></i>
+					{{customJobMetric.jobDetail.deployment}} |
+					{{customJobMetric.jobDetail.job}} |
+					{{customJobMetric.jobDetail.ip}} |
+					{{customJobMetric.jobDetail.index}}</a>
+			</div>
+			<div class="collapse">
+				<table class="table table-striped table-bordered" cellspacing="0"
+					width="100%">
+					<tr>
+						<td>Attribute Name</td>
+						<td>Attribute Value</td>
+					</tr>
+					<tr ng-repeat="attribute in customJobMetric.customAttributes">
+						<td>{{attribute.name}}</td>
+						<td>{{attribute.value}}</td>
+					</tr>
+				</table>
+			</div>
 		</div>
-		<div class="collapse">
-			<table class="table table-striped table-bordered" cellspacing="0" width="100%">
-				<tr>
-					<td>Attribute Name</td>
-					<td>Attribute Value</td>
-				</tr>
-				<tr ng-repeat="attribute in customJobMetric.customAttributes">
-					<td>{{attribute.name}}</td>
-					<td>{{attribute.value}}</td>
-				</tr>
-			</table>
+		<div class="alert alert-danger" role="alert" hidden="true"></div>
+
+		<div ng-if="orgs">
+			<div collapse-toggler class="toggler">
+				<a href="#"><i class="glyphicon glyphicon-chevron-down"></i> All
+					Orgs</a>
+			</div>
+			<div class="collapse">
+				<table class="table table-striped table-bordered" cellspacing="0"
+					width="100%">
+					<tr>
+						<td>Org Name</td>
+						<td>Org GUID</td>
+					</tr>
+					<tr ng-repeat="org in orgs">
+						<td>{{org.name}}</td>
+						<td>{{org.meta.guid}}</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		
+		<div ng-if="spaces">
+			<div collapse-toggler class="toggler">
+				<a href="#"><i class="glyphicon glyphicon-chevron-down"></i> All
+					Spaces</a>
+			</div>
+			<div class="collapse">
+				<table class="table table-striped table-bordered" cellspacing="0"
+					width="100%">
+					<tr>
+						
+						<td>Org Name</td>
+						<td>Space Name</td>
+						<td>Space GUID</td>
+						<td>Space URL</td>
+						<td>No of Applications</td>
+						<td>No of Application Instances</td>
+					</tr>
+					<tr ng-repeat="space in spaces | orderBy: 'organization.name'">
+						<td>{{space.organization.name}}</td>
+						<td>{{space.name}}</td>
+						<td>{{space.meta.guid}}</td>
+						<td>{{space.meta.url}}</td>
+						<td>{{space.number_of_apps}}</td>
+						<td>{{space.number_of_app_instances}}</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		
+		<div ng-if="apps">
+			<div collapse-toggler class="toggler">
+				<a href="#"><i class="glyphicon glyphicon-chevron-down"></i> All
+					Applications</a>
+			</div>
+			<div class="collapse">
+				<table class="table table-striped table-bordered" cellspacing="0"
+					width="100%">
+					<tr>
+						<td>Application Name</td>
+						<td>Application URIs</td>
+						<td>Application Instances</td>
+						<td>Running Instances</td>
+						<td>Memory</td>
+						<td>Disk Quota</td>
+						<td>Space GUID</td>
+						<td>Space Name</td>
+						<td>Org Name</td>
+					</tr>
+					<tr ng-repeat="app in apps">
+						<td>{{app.name}}</td>
+						<td>{{app.uris}}</td>
+						<td>{{app.instances}}</td>
+						<td>{{app.runningInstances}}</td>
+						<td>{{app.memory}}</td>
+						<td>{{app.diskQuota}}</td>
+						<td>{{app.space.meta.guid}}</td>
+						<td>{{app.space_name}}</td>
+						<td>{{app.org_name}}</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		
+		<div ng-if="total_ai_count">
+			<p>Total AI Count : <span class="badge">{{total_ai_count}}</span></p>
 		</div>
 	</div>
-	<div class="alert alert-danger" role="alert" hidden="true"></div>
 </body>
 </html>
