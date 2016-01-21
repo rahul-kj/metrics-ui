@@ -56,6 +56,72 @@ var metricsModule = angular
 				function($scope, $http) {
 					var endpoint = 'http://metrics.apps.homelab.io';
 					$scope.loading = true;
+					$scope.dataToLoad = 5;
+					
+					$scope.turnOffLoading = function() {
+						if($scope.dataToLoad === 0) { 
+							$scope.loading = false;
+						}
+					}
+					
+					$scope.total_app_instances = function() {
+						var total_ai_count = 0;
+						_.each($scope.spaces, function(space) {
+							if (space.organization.name != "system" && space.organization.name != "p-spring-cloud-services") {
+								total_ai_count += space.number_of_app_instances;
+							}
+						});
+						
+						$scope.total_ai_count = total_ai_count;
+					}
+					
+					$scope.app_instances_per_space = function() {
+						_.each($scope.spaces, function(space) {
+							var i = 0;
+							var j = 0;
+							_.each($scope.apps, function(app) {
+								if(app.space_name === space.name && app.org_name === space.organization.name) {
+									i++;
+									j += app.instances;
+								}
+							})
+							space.number_of_apps = i;
+							space.number_of_app_instances = j;
+						});
+					}
+					
+					$scope.totals = function() {
+						_.each($scope.customJobMetrics, function(customJobMetric) {
+							if(customJobMetric.jobDetail.job === "CloudController" && customJobMetric.jobDetail.deployment === "untitled_dev") {
+								$scope.total_user_count = _.find(customJobMetric.customAttributes, function(attribute) {
+									if(attribute.name === "total_users") {
+										return attribute.value;
+									}
+								}) 
+							}
+							
+							if(customJobMetric.jobDetail.job === "Router" && customJobMetric.jobDetail.deployment === "untitled_dev") {
+								$scope.total_routes = _.find(customJobMetric.customAttributes, function(attribute) {
+									if(attribute.name === "router.total_routes") {
+										return attribute.value;
+									}
+								}) 
+							}
+						});
+					}
+					
+					$http.get(endpoint + '/totals').success(
+							function(data) {
+								$scope.totals = data;
+								$scope.dataToLoad--;
+								$scope.turnOffLoading();
+							}).error(
+							function(msg, response) {
+								console.log(msg, response);
+								$('.alert-danger').html(
+										"Error while invoking the server")
+										.show();
+							});
 
 					$http
 							.get(endpoint + '/metrics')
@@ -63,9 +129,9 @@ var metricsModule = angular
 									function(data) {
 										$scope.vmMetrics = data.vmMetrics;
 										$scope.customJobMetrics = data.customJobMetrics;
-
-										$scope.healthyComponents = getHealthyComponents($scope.vmMetrics);
-										$scope.loading = false;
+										$scope.totals();
+										$scope.dataToLoad--;
+										$scope.turnOffLoading();
 									})
 							.error(
 									function(response) {
@@ -79,6 +145,8 @@ var metricsModule = angular
 					$http.get(endpoint + '/orgs').success(
 							function(data) {
 								$scope.orgs = data;
+								$scope.dataToLoad--;
+								$scope.turnOffLoading();
 							}).error(
 							function(response) {
 								$('.alert-danger').html(
@@ -89,12 +157,15 @@ var metricsModule = angular
 					$http.get(endpoint + '/spaces').success(
 							function(data) {
 								$scope.spaces = data;
+								$scope.dataToLoad--;
+								$scope.turnOffLoading();
 							}).error(
 							function(response) {
 								$('.alert-danger').html(
 										"Error while invoking the server")
 										.show();
 							});
+					
 					
 					$http.get(endpoint + '/apps').success(
 							function(data) {
@@ -109,41 +180,18 @@ var metricsModule = angular
 									})
 								});
 								
-								_.each($scope.spaces, function(space) {
-									var i = 0;
-									var j = 0;
-									_.each($scope.apps, function(app) {
-										if(app.space_name === space.name) {
-											i++;
-											j += app.instances;
-										}
-									})
-									space.number_of_apps = i;
-									space.number_of_app_instances = j;
-								});
+								$scope.app_instances_per_space();
+								$scope.total_app_instances();
 								
-								var total_ai_count = 0;
-								_.each($scope.spaces, function(space) {
-									if (space.organization.name != "system" && space.organization.name != "p-spring-cloud-services") {
-										total_ai_count += space.number_of_app_instances;
-									}
-								});
-								
-								$scope.total_ai_count = total_ai_count;
+								$scope.dataToLoad--;
+								$scope.turnOffLoading();
 								
 							}).error(
 							function(response) {
+								console.log(response);
 								$('.alert-danger').html(
 										"Error while invoking the server")
 										.show();
 							});
 					
 				});
-
-function getHealthyComponents(vmMetrics) {
-	var systemHealthComponents = _.filter(vmMetrics, function(vmMetric) {
-		return (vmMetric.fixedAttribute.system_healthy === "1.0");
-	});
-	return (systemHealthComponents);
-
-};

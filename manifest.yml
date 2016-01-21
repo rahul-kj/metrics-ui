@@ -1,0 +1,6 @@
+---
+applications: 
+- name: metrics-ui
+  memory: 1024M
+  path: ../metrics-ui/
+  buildpack: staticfile_buildpack
