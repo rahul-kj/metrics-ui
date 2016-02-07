@@ -56,14 +56,14 @@ var metricsModule = angular
 		.controller(
 				'metricsCtrl',
 				function($scope, $timeout, $http) {
-					$scope.dataToLoad = 5;
+					$scope.dataToLoad = 4;
 
 					$scope.turnOffLoading = function() {
 						if($scope.dataToLoad === 0) {
 							$scope.loading = false;
 						}
 					}
-					
+
 					$scope.populateCharts = function() {
 						$scope.deploymentChartMap = [];
 						uniqueDeploymentNames = [];
@@ -75,7 +75,7 @@ var metricsModule = angular
 								uniqueDeploymentNames.push(vmMetric.jobDetail.deployment);
 							}
 						});
-						
+
 						_.each(uniqueDeploymentNames, function(uniqueDeploymentName) {
 							chartMeta = {};
 							chartMeta["healthydata"] = [];
@@ -85,7 +85,9 @@ var metricsModule = angular
 							_.each($scope.vmMetrics, function(vmMetric) {
 								if(vmMetric.jobDetail.deployment == uniqueDeploymentName) {
 									if(vmMetric.fixedAttribute.system_healthy == "1.0") {
-										chartMeta.healthylabels.push(vmMetric.jobDetail.job);
+										var jobName = vmMetric.jobDetail.job + " - " + vmMetric.fixedAttribute.system_disk_persistent_percent + "%";
+
+										chartMeta.healthylabels.push(jobName);
 										if(vmMetric.fixedAttribute.system_cpu_user == "0.0") {
 											chartMeta.healthydata.push("0.1");
 										} else {
@@ -97,13 +99,13 @@ var metricsModule = angular
 									}
 								}
 							});
-							
+
 							$scope.deploymentChartMap.push({
 								deploymentname : uniqueDeploymentName,
 								chartMeta : chartMeta
 							});
 						});
-						
+
 						console.log($scope.deploymentChartMap);
 					}
 
@@ -248,7 +250,7 @@ var metricsModule = angular
 										.show();
 							});
 					}
-					
+
 					var execute = function() {
 						$scope.loading = true;
 						$('.alert-danger').hide();
@@ -258,11 +260,10 @@ var metricsModule = angular
 						spaces();
 //						apps();
 					}
-					
+
 					execute();
 //					$timeout(execute, timeOutInterval);
-					
-					
+
+
 
 				});
-				

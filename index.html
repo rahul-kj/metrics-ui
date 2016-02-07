@@ -22,7 +22,7 @@
 		<div ng-if="total.applicationsCount" style="font-size: 24px">
 			<p>Totals Per foundation:</p>
 			<span class="label label-success label-as-badge">Total
-				Orgs:{{total.orgsCount}}</span> <span
+				Orgs: {{total.orgsCount}}</span> <span
 				class="label label-success label-as-badge">Total Spaces :
 				{{total.spacesCount}}</span> <span
 				class="label label-success label-as-badge">Total Apps Count :
@@ -40,8 +40,15 @@
 				class="label label-success label-as-badge">Total Service
 				Instances : {{total.serviceInstancesCount}}</span> <span
 				class="label label-success label-as-badge">Total AI Count :
-				{{total_ai_count}}</span> <span class="label label-success label-as-badge">Total
-				App Create Events Count : {{total.appCreateEventsCount}}</span> <span
+				{{total.applicationInstanceCount}}</span> <span
+				class="label label-success label-as-badge">Total Running AI
+				Count : {{total.runningApplicationInstanceCount}}</span> <span
+				class="label label-success label-as-badge">Total Diego Apps :
+				{{total.totalDiegoAppsCount}}</span> <span
+				class="label label-success label-as-badge">Total Warden Apps
+				: {{total.totalWardenAppsCount}}</span> <span
+				class="label label-success label-as-badge">Total App Create
+				Events Count : {{total.appCreateEventsCount}}</span> <span
 				class="label label-success label-as-badge">Total App Delete
 				Events Count : {{total.appDeleteEventsCount}}</span> <span
 				class="label label-success label-as-badge">Total App Update
@@ -53,10 +60,13 @@
 				class="label label-success label-as-badge">Total App Stop
 				Events Count : {{total.appStopEventsCount}}</span> <span
 				class="label label-success label-as-badge">Total App SSH
-				Authorized Events Count : {{total.appAuthorizedSSHEventsCount}}</span> <span
-				class="label label-success label-as-badge">Total App SSH
+				Authorized Events Count : {{total.appAuthorizedSSHEventsCount}}</span> 
+				<span class="label label-success label-as-badge">Total App SSH
 				UnAuthorized Events Count : {{total.appUnAuthorizedSSHEventsCount}}</span>
+		<br>
+		<br>
 		</div>
+		
 
 		<div ng-repeat="deploymentChart in deploymentChartMap">
 			<div ng-show="deploymentChart.chartMeta.healthydata.length">
@@ -65,7 +75,7 @@
 						<div class="panel-heading">{{deploymentChart.deploymentname}}
 							- Total Running Jobs -
 							{{deploymentChart.chartMeta.healthylabels.length}} - (Running
-							Jobs - CPU Per User %)</div>
+							Jobs - Persistence Disk % - CPU Per User %)</div>
 						<div class="panel-body">
 							<div class="chart-container">
 								<canvas id="{{deploymentChart.deploymentname}} - Healthy"
