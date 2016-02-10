@@ -1,5 +1,7 @@
-var endpoint = 'http://metrics.apps.homelab.io';
-var timeOutInterval = 30000;
+var endpoint = 'http://<domain>';
+var timeOutInterval = 60000;
+var dataToLoad = 4;
+
 var metricsModule = angular
 		.module('metricsApp', ["chart.js"])
 		.directive(
@@ -56,10 +58,9 @@ var metricsModule = angular
 		.controller(
 				'metricsCtrl',
 				function($scope, $timeout, $http) {
-					$scope.dataToLoad = 4;
 
 					$scope.turnOffLoading = function() {
-						if($scope.dataToLoad === 0) {
+						if(dataToLoad === 0) {
 							$scope.loading = false;
 						}
 					}
@@ -106,33 +107,6 @@ var metricsModule = angular
 							});
 						});
 
-						console.log($scope.deploymentChartMap);
-					}
-
-					$scope.total_app_instances = function() {
-						var total_ai_count = 0;
-						_.each($scope.spaces, function(space) {
-							if (space.organization.name != "system" && space.organization.name != "p-spring-cloud-services") {
-								total_ai_count += space.number_of_app_instances;
-							}
-						});
-
-						$scope.total_ai_count = total_ai_count;
-					}
-
-					$scope.app_instances_per_space = function() {
-						_.each($scope.spaces, function(space) {
-							var i = 0;
-							var j = 0;
-							_.each($scope.apps, function(app) {
-								if(app.space_name === space.name && app.org_name === space.organization.name) {
-									i++;
-									j += app.instances;
-								}
-							})
-							space.number_of_apps = i;
-							space.number_of_app_instances = j;
-						});
 					}
 
 					$scope.totals = function() {
@@ -158,9 +132,10 @@ var metricsModule = angular
 					var totals = function() {
 						$http.get(endpoint + '/totals').success(
 							function(data) {
-								$scope.total = data;
-								$scope.dataToLoad--;
+								$scope.totallist = data;
+								dataToLoad--;
 								$scope.turnOffLoading();
+								$timeout(totals, timeOutInterval);
 							}).error(
 							function(msg, response) {
 								console.log(msg, response);
@@ -178,9 +153,10 @@ var metricsModule = angular
 										$scope.vmMetrics = data.vmMetrics;
 										$scope.customJobMetrics = data.customJobMetrics;
 										$scope.totals();
-										$scope.dataToLoad--;
+										dataToLoad--;
 										$scope.turnOffLoading();
 										$scope.populateCharts();
+										$timeout(metrics, timeOutInterval);
 									})
 							.error(
 									function(response) {
@@ -197,8 +173,9 @@ var metricsModule = angular
 						$http.get(endpoint + '/orgs').success(
 							function(data) {
 								$scope.orgs = data;
-								$scope.dataToLoad--;
+								dataToLoad--;
 								$scope.turnOffLoading();
+								$timeout(orgs, timeOutInterval);
 							}).error(
 							function(response) {
 								console.log(response);
@@ -212,8 +189,9 @@ var metricsModule = angular
 						$http.get(endpoint + '/spaces').success(
 							function(data) {
 								$scope.spaces = data;
-								$scope.dataToLoad--;
+								dataToLoad--;
 								$scope.turnOffLoading();
+								$timeout(spaces, timeOutInterval);
 							}).error(
 							function(response) {
 								console.log(response);
@@ -228,20 +206,68 @@ var metricsModule = angular
 							function(data) {
 								$scope.apps = data;
 
+								var java = 0;
+								var node = 0;
+								var python = 0;
+								var go = 0;
+								var ruby = 0;
+								var nullbuildpack = 0;
+								var binary = 0;
+								var staticfile = 0;
+								var php = 0;
+								var tcServer = 0;
+								var other = 0;
+
 								_.each($scope.apps, function(app) {
 									_.find($scope.spaces, function(space) {
-										if(app.space.meta.guid === space.meta.guid) {
+										if(app.spaceGUID === space.meta.guid) {
 											app.space_name = space.name;
 											app.org_name = space.organization.name;
+											if(isNaN(space.number_of_apps)) {
+												space.number_of_apps = 0;
+											}
+											if(isNaN(space.number_of_app_instances)) {
+												space.number_of_app_instances = 0;
+											}
+											space.number_of_apps += 1;
+											space.number_of_app_instances += app.instances;
 										}
 									})
+
+									if(app.buildpack != null) {
+										if(app.buildpack.indexOf('java') > -1) {
+											java += 1;
+										} else if(app.buildpack.indexOf('node') > -1) {
+											node += 1;
+										} else if(app.buildpack.indexOf('python') > -1) {
+											python += 1;
+										} else if(app.buildpack.indexOf('go') > -1) {
+											go += 1;
+										} else if(app.buildpack.indexOf('ruby') > -1) {
+											ruby += 1;
+										} else if(app.buildpack.indexOf('null') > -1) {
+											nullbuildpack += 1;
+										} else if(app.buildpack.indexOf('binary') > -1) {
+											binary += 1;
+										} else if(app.buildpack.indexOf('static') > -1) {
+											staticfile += 1;
+										} else if(app.buildpack.indexOf('php') > -1) {
+											php += 1;
+										} else if(app.buildpack.indexOf('tc') > -1) {
+											tcServer += 1;
+										} else {
+											other += 1;
+										}
+									}
 								});
 
-								$scope.app_instances_per_space();
-								$scope.total_app_instances();
-
-								$scope.dataToLoad--;
+								dataToLoad--;
 								$scope.turnOffLoading();
+
+								$scope.buildpacklabels = ["java-buildpack", "nodejs-buildpack", "python-buildpack", "go-buildpack", "ruby-buildpack", "null-buildpack", "binary-buildpack", "statisfile-buildpack", "php-buildpack", "tcserver-buildpack", "other"];
+								$scope.buildpackdata = [java, node, python, go, ruby, nullbuildpack, binary, staticfile, php, tcServer, other];
+
+								$timeout(apps, timeOutInterval);
 							}).error(
 							function(response) {
 								console.log(response);
@@ -258,12 +284,9 @@ var metricsModule = angular
 						metrics();
 						orgs();
 						spaces();
-//						apps();
+						apps();
 					}
 
 					execute();
-//					$timeout(execute, timeOutInterval);
-
-
 
 				});
